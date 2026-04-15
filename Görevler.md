@@ -8,17 +8,17 @@ Bu dosya, README'deki vizyon ve teknik plana göre projeyi uygulanabilir görevl
 
 ## 1. Proje Hazırlığı
 
-- [ ] G-01 Proje klasor yapisini netlestir: src/features, src/components, src/data, src/engine, src/types
-- [ ] G-02 Kod standartlarini belirle: ESLint + Prettier + TypeScript strict kurallari
+- [x] G-01 Proje klasor yapisini netlestir: src/features, src/components, src/data, src/engine, src/types
+- [x] G-02 Kod standartlarini belirle: ESLint + Prettier + TypeScript strict kurallari
 - [ ] G-03 Ortak UI temelini hazirla: renk tokenlari, tipografi, spacing ve layout kurallari
-- [ ] G-04 Router iskeletini olustur: Ana sayfa, test akisi, sonuc ekrani, hakkinda
+- [x] G-04 Router iskeletini olustur: Ana sayfa, test akisi, sonuc ekrani, hakkinda
 
 ## 2. Domain Modeli ve Veri Semasi
 
-- [ ] G-05 README'deki SportScores tipini src/types altinda tanimla
-- [ ] G-06 Question tipi ve kategori yapisini (health, anthropometric, motoric) tanimla
-- [ ] G-07 Soru bankasi dosyasi olustur: en az 20 soru, her secenekte weights ve explanation alanlari
-- [ ] G-08 Veri dogrulama katmani ekle: eksik agirlik, gecersiz kategori, bos aciklama kontrolleri
+- [x] G-05 README'deki SportScores tipini src/types altinda tanimla
+- [x] G-06 Question tipi ve kategori yapisini (health, anthropometric, motoric) tanimla
+- [x] G-07 Soru bankasi dosyasi olustur: en az 20 soru, her secenekte weights ve explanation alanlari
+- [x] G-08 Veri dogrulama katmani ekle: eksik agirlik, gecersiz kategori, bos aciklama kontrolleri
 
 ## 3. Uzman Sistem Motoru (Weighted Scoring Matrix)
 
