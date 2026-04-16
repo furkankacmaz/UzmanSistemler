@@ -28,9 +28,8 @@ export default function HomePage() {
 
       <h1 className="mb-4 text-3xl font-bold text-slate-100">Spora Yonlendirme Uzman Sistemi</h1>
       <p className="mb-6 text-slate-300">
-        Sistem, antropometrik ozellikler, motorik yetenekler ve saglik kisitlarini
-        analiz ederek kullaniciya en uygun spor dallarini onerecek sekilde
-        planlandi.
+        Sistem, 7-14 yas arasi cocuklarin boy, kilo, kulac ve motorik profil
+        verilerini analiz ederek guvenli ve aciklanabilir spor onerileri uretir.
       </p>
     </section>
   );

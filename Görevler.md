@@ -22,26 +22,28 @@ Bu dosya, README'deki vizyon ve teknik plana göre projeyi uygulanabilir görevl
 
 ## 3. Uzman Sistem Motoru (Weighted Scoring Matrix)
 
-- [ ] G-09 Baslangic puanlarini sifirlayan skor motorunu yaz
-- [ ] G-10 Her cevap seciminde SportScores biriktirme algoritmasini uygula
-- [ ] G-11 Negatif ve pozitif agirliklarin birlikte islenmesini garanti et
-- [ ] G-12 Esit puan durumlari icin tie-break kurali tanimla
-- [ ] G-13 Sonuc uretimi: ilk 3 spor bransini puana gore sirala
-- [ ] G-14 Aciklanabilirlik katmani ekle: sonuca etki eden en kritik cevaplari listele
+- [x] G-09 Baslangic puanlarini sifirlayan skor motorunu yaz
+- [x] G-10 Her cevap seciminde SportScores biriktirme algoritmasini uygula
+- [x] G-11 Negatif ve pozitif agirliklarin birlikte islenmesini garanti et
+- [x] G-12 Esit puan durumlari icin tie-break kurali tanimla
+- [x] G-13 Sonuc uretimi: ilk 3 spor bransini puana gore sirala
+- [x] G-14 Aciklanabilirlik katmani ekle: sonuca etki eden en kritik cevaplari listele
+- [x] G-43 7-14 yas cocuk profil uygunluk kurallarini ekle (boy, kilo, kulac, nabiz, aktivite)
+- [x] G-44 Karar agaci mantigini (kural yolu + mermaid cikisi) uygulamaya bagla
 
 ## 4. Anket Akisi ve Kullanici Deneyimi
 
-- [ ] G-15 Cok adimli form yapisi kur: kategori bazli adimlar
-- [ ] G-16 Ilerleme gostergesi ekle: adim sayisi, tamamlanma yuzesdesi
-- [ ] G-17 Geri-ileri gezinme ve cevap degistirme akisini ekle
-- [ ] G-18 Form state yonetimini merkezi hale getir (context veya store)
-- [ ] G-19 Sonuclari yenileme butonu ekle ve tum state'i sifirla
+- [x] G-15 Cok adimli form yapisi kur: kategori bazli adimlar
+- [x] G-16 Ilerleme gostergesi ekle: adim sayisi, tamamlanma yuzesdesi
+- [x] G-17 Geri-ileri gezinme ve cevap degistirme akisini ekle
+- [x] G-18 Form state yonetimini merkezi hale getir (context veya store)
+- [x] G-19 Sonuclari yenileme butonu ekle ve tum state'i sifirla
 
 ## 5. Sonuc Ekrani ve Analitik Sunum
 
-- [ ] G-20 Oncelikli spor onerilerini kart yapisinda goster
-- [ ] G-21 Her oneride "Neden bu spor?" aciklamasini goster
-- [ ] G-22 Kullanici girdilerine gore guclu ve gelisime acik alanlar ozetini ekle
+- [x] G-20 Oncelikli spor onerilerini kart yapisinda goster
+- [x] G-21 Her oneride "Neden bu spor?" aciklamasini goster
+- [x] G-22 Kullanici girdilerine gore guclu ve gelisime acik alanlar ozetini ekle
 - [ ] G-23 Sonuclari okunabilir bir rapor formatinda disa aktarma (PDF veya yazdirma)
 
 ## 6. Antigravity Tasarim Dili Uygulamasi
@@ -70,7 +72,7 @@ Bu dosya, README'deki vizyon ve teknik plana göre projeyi uygulanabilir görevl
 
 ## 9. Dokumantasyon ve Teslimat
 
-- [ ] G-39 README'yi guncelle: kurulum, calistirma, mimari, algoritma aciklamasi
+- [x] G-39 README'yi guncelle: kurulum, calistirma, mimari, algoritma aciklamasi
 - [ ] G-40 Karar motoru icin ornek veri seti ve beklenen cikti tablosu ekle
 - [ ] G-41 Kullanici kilavuzu hazirla: testi nasil doldurur, sonucu nasil yorumlar
 - [ ] G-42 Yayinlama adimlarini netlestir (build, environment, hosting)
