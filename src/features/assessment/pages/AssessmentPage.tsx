@@ -1,17 +1,12 @@
+import { useMemo, useState } from "react";
 import { questionBank } from "@/data/questionBank";
-import { runAssessment } from "@/engine/assessmentEngine";
-import { validateQuestionBank } from "@/engine/validateQuestionBank";
 import { useAssessment } from "@/features/assessment/state/useAssessment";
 import { useNavigate } from "react-router-dom";
 
-const CATEGORY_LABELS = {
-  health: "Saglik",
-  anthropometric: "Antropometrik",
-  motoric: "Motorik",
-} as const;
+type ProfileField = "age" | "heightCm" | "weightKg" | "armSpanCm" | "restingHeartRate" | "weeklyActivityDays";
 
 const PROFILE_FIELDS: Array<{
-  field: "age" | "heightCm" | "weightKg" | "armSpanCm" | "restingHeartRate" | "weeklyActivityDays";
+  field: ProfileField;
   label: string;
   min: number;
   max: number;
@@ -24,170 +19,184 @@ const PROFILE_FIELDS: Array<{
   { field: "weeklyActivityDays", label: "Haftalik Aktivite Gunu", min: 0, max: 7 },
 ];
 
+function getRangeErrorMessage(label: string, min: number, max: number): string {
+  return `${label} ${min}-${max} araliginda olmali.`;
+}
+
 export default function AssessmentPage() {
   const navigate = useNavigate();
-  const {
-    state,
-    categoryOrder,
-    totalSteps,
-    totalQuestionCount,
-    answeredCount,
-    completionPercent,
-    isStepComplete,
-    asAnswerMap,
-    setProfileField,
-    setAnswer,
-    goToNextStep,
-    goToPreviousStep,
-    setStep,
-  } = useAssessment();
+  const { state, totalQuestionCount, answeredCount, completionPercent, setProfileField, setAnswer } = useAssessment();
 
-  const validationIssues = validateQuestionBank(questionBank);
-  const assessment = runAssessment(questionBank, asAnswerMap(), state.profile);
-  const currentCategory = categoryOrder[state.currentStep];
-  const currentQuestions = questionBank.filter((question) => question.category === currentCategory);
-  const isCurrentStepComplete = isStepComplete(state.currentStep);
-  const isFirstStep = state.currentStep === 0;
-  const isLastStep = state.currentStep === totalSteps - 1;
-  const currentStepRatio = Math.round(((state.currentStep + 1) / totalSteps) * 100);
+  const [stage, setStage] = useState<"profile" | "questions">("profile");
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [profileErrors, setProfileErrors] = useState<Partial<Record<ProfileField, string>>>({});
 
-  function handleProfileChange(
-    field: "age" | "heightCm" | "weightKg" | "armSpanCm" | "restingHeartRate" | "weeklyActivityDays",
-    rawValue: string
-  ) {
+  const currentQuestion = questionBank[currentQuestionIndex];
+  const isCurrentQuestionAnswered =
+    typeof state.answers[currentQuestion?.id ?? ""] === "number";
+
+  const questionProgress = useMemo(() => {
+    if (totalQuestionCount === 0) {
+      return 0;
+    }
+    return Math.round((answeredCount / totalQuestionCount) * 100);
+  }, [answeredCount, totalQuestionCount]);
+
+  function handleProfileChange(field: ProfileField, rawValue: string) {
     const nextValue = Number(rawValue);
     if (Number.isNaN(nextValue)) {
       return;
     }
 
     setProfileField(field, nextValue);
-  }
 
-  function handleNextAction() {
-    if (!isCurrentStepComplete) {
+    const currentField = PROFILE_FIELDS.find((item) => item.field === field);
+    if (!currentField) {
       return;
     }
 
-    if (isLastStep) {
+    if (nextValue >= currentField.min && nextValue <= currentField.max) {
+      setProfileErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }
+
+  function validateProfile(): boolean {
+    const nextErrors: Partial<Record<ProfileField, string>> = {};
+
+    PROFILE_FIELDS.forEach((fieldDef) => {
+      const value = state.profile[fieldDef.field];
+      if (!Number.isFinite(value) || value < fieldDef.min || value > fieldDef.max) {
+        nextErrors[fieldDef.field] = getRangeErrorMessage(fieldDef.label, fieldDef.min, fieldDef.max);
+      }
+    });
+
+    if (!Number.isInteger(state.profile.age)) {
+      nextErrors.age = "Yas tam sayi olmali.";
+    }
+
+    if (!Number.isInteger(state.profile.weeklyActivityDays)) {
+      nextErrors.weeklyActivityDays = "Haftalik aktivite gunu tam sayi olmali.";
+    }
+
+    setProfileErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  function handleProfileContinue() {
+    if (!validateProfile()) {
+      return;
+    }
+    setStage("questions");
+  }
+
+  function handleQuestionContinue() {
+    if (!currentQuestion || !isCurrentQuestionAnswered) {
+      return;
+    }
+
+    if (currentQuestionIndex === totalQuestionCount - 1) {
       navigate("/sonuc");
       return;
     }
 
-    goToNextStep();
+    setCurrentQuestionIndex((prev) => prev + 1);
+  }
+
+  function handleQuestionBack() {
+    if (currentQuestionIndex === 0) {
+      setStage("profile");
+      return;
+    }
+
+    setCurrentQuestionIndex((prev) => prev - 1);
   }
 
   return (
     <section className="mx-auto max-w-5xl p-6">
-      <h1 className="mb-3 text-3xl font-bold text-slate-100">Test Akisi</h1>
-      <p className="text-slate-300">
-        Kategori bazli cok adimli anket akisi ve cocuk profil girdileri bu
-        ekrandan yonetilir.
+      <h1 className="mb-3 text-3xl font-bold text-gray-900">Test Akisi</h1>
+      <p className="text-gray-500">
+        Once profil bilgilerini doldur, sonra sorulari tek tek cevaplayarak sonucu gor.
       </p>
 
-      <div className="mt-6 rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-        <p className="text-slate-200">Soru sayisi: {questionBank.length}</p>
-        <p className={validationIssues.length > 0 ? "text-amber-300" : "text-emerald-300"}>
-          Veri dogrulama: {validationIssues.length > 0 ? `${validationIssues.length} sorun` : "Sorun yok"}
-        </p>
-      </div>
-
-      <div className="mt-6 rounded-xl border border-cyan-800/70 bg-cyan-950/30 p-4">
-        <h2 className="mb-3 text-lg font-semibold text-cyan-200">Cocuk Profil Bilgileri (7-14 Yas)</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {PROFILE_FIELDS.map((item) => (
-            <label key={item.field} className="text-sm text-cyan-100">
-              <span className="mb-1 block">{item.label}</span>
-              <input
-                className="w-full rounded-md border border-cyan-900 bg-slate-950/70 px-3 py-2 text-cyan-100 outline-none focus:border-cyan-500"
-                max={item.max}
-                min={item.min}
-                onChange={(event) => handleProfileChange(item.field, event.target.value)}
-                type="number"
-                value={state.profile[item.field]}
-              />
-            </label>
-          ))}
-        </div>
-        <p className="mt-3 text-sm text-cyan-100">
-          BMI: {assessment.suitability.metrics.bmi} | Kulac/Boy: {assessment.suitability.metrics.armSpanToHeightRatio} |
-          Uygunluk: {assessment.suitability.isEligible ? "Uygun" : "Uygun degil"}
-        </p>
-        {assessment.suitability.issues.length > 0 && (
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-200">
-            {assessment.suitability.issues.map((issue) => (
-              <li key={`${issue.field}-${issue.message}`}>{issue.message}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="mt-6 rounded-xl border border-indigo-800/70 bg-indigo-950/30 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-indigo-200">
-            Adim {state.currentStep + 1}/{totalSteps}: {CATEGORY_LABELS[currentCategory]}
+      <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-indigo-800">
+            {stage === "profile" ? "1/2 Profil Bilgileri" : `2/2 Soru Asamasi (${currentQuestionIndex + 1}/${totalQuestionCount})`}
           </h2>
-          <p className="text-sm text-indigo-100">
-            Cevaplanan soru: {answeredCount}/{totalQuestionCount}
-          </p>
+          <p className="text-sm text-indigo-600">Tamamlanma: %{stage === "profile" ? 0 : questionProgress}</p>
         </div>
 
-        <div className="mt-3 h-2 rounded-full bg-slate-800">
+        <div className="mt-3 h-2 rounded-full bg-indigo-100">
           <div
-            className="h-2 rounded-full bg-indigo-400 transition-all"
-            style={{ width: `${completionPercent}%` }}
+            className="h-2 rounded-full bg-indigo-500 transition-all"
+            style={{ width: `${stage === "profile" ? 0 : questionProgress}%` }}
           />
         </div>
-        <p className="mt-2 text-xs text-indigo-100">
-          Toplam tamamlanma: %{completionPercent} | Adim ilerlemesi: %{currentStepRatio}
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {categoryOrder.map((category, stepIndex) => {
-            const active = stepIndex === state.currentStep;
-            const completed = isStepComplete(stepIndex);
-            return (
-              <button
-                className={[
-                  "rounded-md border px-3 py-1 text-xs font-semibold transition-colors",
-                  active
-                    ? "border-indigo-300 bg-indigo-500/20 text-indigo-100"
-                    : "border-slate-700 bg-slate-900/50 text-slate-300 hover:border-indigo-500",
-                ].join(" ")}
-                key={category}
-                onClick={() => setStep(stepIndex)}
-                type="button"
-              >
-                {CATEGORY_LABELS[category]} {completed ? "- Tamam" : "- Bekliyor"}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      <div className="mt-6 space-y-4">
-        {currentQuestions.map((question) => (
-          <article key={question.id} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-            <h3 className="text-base font-semibold text-slate-100">
-              {question.id} - {question.text}
+      {stage === "profile" && (
+        <>
+          <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+            <h2 className="mb-3 text-lg font-semibold text-blue-800">Cocuk Profil Bilgileri (7-14 Yas)</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {PROFILE_FIELDS.map((item) => (
+                <label key={item.field} className="text-sm text-gray-700">
+                  <span className="mb-1 block font-medium">{item.label}</span>
+                  <input
+                    className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    max={item.max}
+                    min={item.min}
+                    onChange={(event) => handleProfileChange(item.field, event.target.value)}
+                    type="number"
+                    value={state.profile[item.field]}
+                  />
+                  {profileErrors[item.field] && <span className="mt-1 block text-xs text-rose-600">{profileErrors[item.field]}</span>}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center gap-3">
+            <button
+              className="rounded-md border border-blue-500 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              onClick={handleProfileContinue}
+              type="button"
+            >
+              Devam Et
+            </button>
+          </div>
+        </>
+      )}
+
+      {stage === "questions" && currentQuestion && (
+        <>
+          <article className="mt-6 rounded-xl border border-gray-200 bg-white/80 p-4 shadow-sm">
+            <h3 className="text-base font-semibold text-gray-900">
+              {currentQuestion.id} - {currentQuestion.text}
             </h3>
+
             <div className="mt-3 space-y-2">
-              {question.options.map((option, index) => {
-                const selected = state.answers[question.id] === index;
+              {currentQuestion.options.map((option, index) => {
+                const selected = state.answers[currentQuestion.id] === index;
                 return (
                   <label
                     className={[
                       "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
                       selected
-                        ? "border-cyan-400 bg-cyan-500/10 text-cyan-100"
-                        : "border-slate-700 bg-slate-900/40 text-slate-200 hover:border-cyan-700",
+                        ? "border-blue-400 bg-blue-50 text-blue-900"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50/40",
                     ].join(" ")}
-                    key={`${question.id}-${option.label}`}
+                    key={`${currentQuestion.id}-${option.label}`}
                   >
                     <input
                       checked={selected}
-                      className="mt-1"
-                      name={question.id}
-                      onChange={() => setAnswer(question.id, index)}
+                      className="mt-1 accent-blue-600"
+                      name={currentQuestion.id}
+                      onChange={() => setAnswer(currentQuestion.id, index)}
                       type="radio"
                     />
                     <span className="text-sm">{option.label}</span>
@@ -196,30 +205,38 @@ export default function AssessmentPage() {
               })}
             </div>
           </article>
-        ))}
-      </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <button
-          className="rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={isFirstStep}
-          onClick={goToPreviousStep}
-          type="button"
-        >
-          Geri
-        </button>
-        <button
-          className="rounded-md border border-cyan-500 bg-cyan-500/15 px-4 py-2 text-sm font-semibold text-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!isCurrentStepComplete}
-          onClick={handleNextAction}
-          type="button"
-        >
-          {isLastStep ? "Sonucu Goster" : "Ileri"}
-        </button>
-        {!isCurrentStepComplete && (
-          <p className="text-sm text-amber-300">Ileri gitmek icin bu adimdaki tum sorulari cevapla.</p>
-        )}
-      </div>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+              onClick={handleQuestionBack}
+              type="button"
+            >
+              Geri
+            </button>
+            <button
+              className="rounded-md border border-blue-500 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!isCurrentQuestionAnswered}
+              onClick={handleQuestionContinue}
+              type="button"
+            >
+              {currentQuestionIndex === totalQuestionCount - 1 ? "Sonuclari Goruntule" : "Devam Et"}
+            </button>
+            {!isCurrentQuestionAnswered && (
+              <p className="text-sm text-amber-600">Devam etmek icin bir secenek isaretle.</p>
+            )}
+            <p className="text-sm text-indigo-600">Cevaplanan soru: {answeredCount}/{totalQuestionCount}</p>
+          </div>
+        </>
+      )}
+
+      {stage === "questions" && !currentQuestion && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+          Soru listesi bulunamadi.
+        </div>
+      )}
+
+      <p className="mt-4 text-xs text-gray-500">Genel ilerleme: %{completionPercent}</p>
     </section>
   );
 }
